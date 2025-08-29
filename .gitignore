@@ -1,0 +1,37 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment directories
+venv_nx/
+venv_agx/
+
+# Distribution / packaging
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Test / coverage reports
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE / editor settings
+.vscode/
+.idea/
+*.swp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Exclude specific folder
+llama.cpp/
+models/
+logs/
+assets/
+**/index.html
+*.env
