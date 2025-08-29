@@ -69,6 +69,3 @@ All core modules are accessible via the **FastAPI Gateway (Port 8000)**
 - **Research Intern**: Seyoon Oh
 - Korea University – School of Industrial & Management Engineering
 - Email : osy7336@korea.ac.kr
-# Interactive_VLM
-# Conversational-Multimodal-Architecture
-# Conversational-Multimodal-Architecture
