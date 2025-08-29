@@ -1,0 +1,27 @@
+{
+  "company": {
+    "lang": "ko",
+    "persona": "dummy_model",
+    "keywords": ["company", "what do you do", "tell me about"],
+    "response": "We are a company that develops humanoid AI robots. This is just a demo response."
+  },
+  "robot_identity": {
+    "lang": "ko",
+    "persona": "dummy_model",
+    "keywords": ["who are you", "your name", "what are you"],
+    "response": "I am a humanoid AI robot. Nice to meet you!"
+  },
+  "robot_function": {
+    "lang": "ko",
+    "persona": "dummy_model",
+    "keywords": ["what can you do", "ability", "function"],
+    "response": "I can walk, talk, and help you with various tasks in different environments."
+  },
+  "weather": {
+    "lang": "ko",
+    "persona": "dummy_model",
+    "keywords": ["weather"],
+    "response": "Sorry, I cannot provide real-time weather information."
+  },
+  "default": "Hello! I’m your friendly AI assistant. How can I help you today?"
+}
