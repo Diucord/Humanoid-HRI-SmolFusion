@@ -1,6 +1,6 @@
-# Conversational Multimodal Architecture (CoMA)
+# SmolFusion: A Real-Time Vision-Language Fusion Architecture for Humanoid HRI
 
-This repository is part of a research project on developing a **Vision-Language Model (VLM)-based multimodal architecture** for **humanoid robots**.
+This project introduces **SmolFusion**, a novel, lightweight multimodal system that achieves **real-time Human-Robot Interaction (HRI)** by fusing a **fine-tuned VLM and LLM** running concurrently. Optimized for both server-based and on-device deployment, this architecture delivers low-latency, context-aware intelligence crucial for embodied agents.
 The project supports both **"server-based"** and **"on-device"** environments, targeting real-time performance for **Human-Robot Interaction (HRI)**.
 
 --- 
@@ -64,8 +64,8 @@ All core modules are accessible via the **FastAPI Gateway (Port 8000)**
 - Extension to additional modules (multi-camera input, extended LLM integration)
 
 ---
-## Research Info
+## Author
 
-- **Research Intern**: Seyoon Oh
-- Korea University – School of Industrial & Management Engineering
+- Seyoon Oh
+- Korea University : School of Industrial & Management Engineering
 - Email : osy7336@korea.ac.kr
