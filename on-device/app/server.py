@@ -25,7 +25,7 @@ async def analyze(
         shutil.copyfileobj(file.file, f)
 
     try:
-        result = run_mobilevlm(
+        result = run_vlm(
             image_path=temp_filename,
             prompt=prompt,
             decode=decode.lower() == "true"
