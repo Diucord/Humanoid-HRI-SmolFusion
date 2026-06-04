@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
+*.egg-info/
+.chroma/
+
+# Node
+node_modules/
+.next/
+out/
+.env.local
+
+# 모델/캐시
+*.gguf
+.cache/
+models/

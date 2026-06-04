@@ -1,0 +1,19 @@
+# ===== 웹 레이어만 (가벼움, torch 불필요) =====
+# 서버 + 채팅 라우팅 + TTS + 페르소나가 동작.
+# VLM/LLM/RAG는 지연 로딩이므로 이 세트만으로도 서버가 뜸.
+#   conda create -n smolfusion python=3.10 -y && conda activate smolfusion
+#   pip install -r requirements-web.txt
+
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.9
+pydantic>=2.0.0
+
+numpy>=1.26.0
+scipy>=1.11.0
+Pillow>=10.0.0
+pypdf>=4.0.0
+
+edge-tts>=6.1.0
+requests>=2.31.0
+python-dotenv>=1.0.0

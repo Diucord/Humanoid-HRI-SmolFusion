@@ -1,0 +1,24 @@
+llm:
+  provider: transformers    # 5080은 로컬 가속 가능
+  url: null
+  model: qwen3-1.7b-q4_k_m
+  max_tokens: 256
+  temperature: 0.7
+vlm:
+  provider: pytorch         # smolVLM PyTorch 서버
+  url: http://127.0.0.1:9000
+  model: SmolVLM-500M-Instruct-f16
+  max_tokens: 96
+  temperature: 0.2
+runtime:
+  analysis_interval: 1.0
+  motion_diff_thresh: 3.0
+  still_frame_min: 0.5
+  jpeg_quality: 90
+  use_tmpfs: false
+persona:
+  name: igris-C
+  language: ko
+tts:
+  engine: edge_tts         # 온라인 허용되는 환경
+  voice: ko-KR-InJoonNeural

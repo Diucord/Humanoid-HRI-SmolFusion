@@ -1,0 +1,13 @@
+{
+  "detect_person": "Is there a person in this image?",
+  "detect_child": "Is there a child in this image?",
+  "detect_adult": "Is there an adult in this image?",
+  "estimate_age_group": "Look at the person in the image and answer with ONLY one of: child, teenager, young adult, middle aged, elderly. No extra words.",
+  "check_gender": "Identify the gender of the person in the image. Answer with ONLY 'male' or 'female'.",
+  "is_smiling": "Is the person smiling? Answer ONLY 'yes' or 'no'.",
+  "check_group": "Are there multiple people in this image? Answer with 'yes' or 'no' only.",
+  "check_uniform": "Is the person wearing a uniform or work outfit? Answer with 'yes' or 'no' only.",
+  "check_user_engagement": "Does the person appear to be talking to the robot? Answer with 'yes' or 'no' only.",
+  "check_child_and_parent": "Are a child and a parent present together in this image? Answer with 'yes' or 'no' only.",
+  "describe_appearance": "Describe a person's appearance or fashion in detail, but succinctly in less than three sentences."
+}
