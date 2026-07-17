@@ -1,7 +1,34 @@
-# 이력서 · 포트폴리오 수정안
+# 이력서 · 포트폴리오 수정안 (검증 과정)
 
 > 저장소 전수 조사 결과와 기존 문서(이력서 PDF / 포트폴리오 PDF)의 차이를 정리한다.
 > 각 항목은 **코드로 검증**했으며, 근거 파일 경로를 함께 표기했다.
+>
+> **→ 바로 쓸 수 있는 완성본은 [`RESUME_FINAL.md`](RESUME_FINAL.md) 참조.**
+> 이 문서는 "왜 그렇게 고쳤는가"의 근거 기록이다.
+
+---
+
+## 🔴 A-0. TensorRT — 저장소에 흔적 없음 (이력서 2곳)
+
+**이력서 서술**
+> (핵심 역량) on-device 양자화·**TensorRT**(Jetson, 지연 3.2s→1.4s)
+> (로브로스 경력) Q4/Q8·FP16 양자화, **TensorRT 최적화**를 적용하여 평균 0.5초...
+
+**검증 결과** — 저장소 전체 검색(`tensorrt`, `torch2trt`, `trtexec`, `.engine`)
+결과 **사용 흔적 없음**. `requirements.txt`에도 TensorRT/ONNX 관련 패키지 부재.
+(검색에 걸린 것은 GGUF 바이너리와 토크나이저 어휘뿐)
+
+**실제 GPU 가속 경로** — llama.cpp CUDA 소스 빌드
+```bash
+cmake .. -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=87   # Jetson Orin SM8.7
+```
+
+**→ 삭제.** 실제 수행한 가속으로 교체:
+> llama.cpp CUDA 소스 빌드(`CMAKE_CUDA_ARCHITECTURES=87`, Xavier SM72 별도 대응),
+> GGUF Q4_K_M 양자화로 모델 3.21GB→1.03GB(-68%)
+
+> **면접 리스크 최상** — TensorRT는 구체적인 기술이라 "어떤 레이어를 변환했나요?",
+> "FP16 캘리브레이션은?" 같은 후속 질문이 반드시 따라온다. 답할 수 없다.
 
 ---
 

@@ -268,6 +268,8 @@ cd webapp\frontend && npm install && npm run dev   # localhost:3000
 │   ├── ARCHITECTURE.md    # 구현 상세
 │   ├── PORTFOLIO.md       # 설계 결정 · 실측 근거
 │   ├── JETSON_PORTING.md  # 온디바이스 이식 최적화 기록
+│   ├── RESUME_FINAL.md    # 포트폴리오 완성본 (검증 완료)
+│   ├── RESUME_PATCH.md    # 검증 과정 · 삭제 사유
 │   └── DEPLOY.md          # 배포 (Vercel + Cloudflare Tunnel)
 │
 ├── on-device/         # Jetson 온디바이스 (정리본 + llama.cpp CUDA 빌드 가이드)
