@@ -1,0 +1,24 @@
+llm:
+  provider: llama.cpp
+  url: ${LLM_URL}
+  model: ${LLM_MODEL}
+  max_tokens: 128
+  temperature: 0.6
+vlm:
+  provider: llama.cpp
+  url: ${VLM_URL}
+  model: ${VLM_MODEL}
+  max_tokens: 128
+  temperature: 0.2
+runtime:
+  analysis_interval: 1.5  
+  motion_diff_thresh: 3.0
+  still_frame_min: 0.7
+  jpeg_quality: 80
+  use_tmpfs: true     
+persona:
+  name: dummy_model
+  language: ko
+tts:
+  engine: edge-tts      
+  voice: ko_KR

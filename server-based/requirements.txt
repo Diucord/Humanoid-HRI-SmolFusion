@@ -1,0 +1,31 @@
+# List of Required Libraries
+numpy
+requests
+scipy
+pydantic
+fastapi
+uvicorn
+opencv-python-headless
+transformers==4.30
+tokenizers==0.13.3
+Pillow
+
+# System Packages (Ubuntu / Debian)
+sudo apt-get update
+sudo apt-get install -y \
+    libjpeg-dev \
+    zlib1g-dev \
+    libpython3-dev \
+    libopenblas-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev
+
+# TorchVision (v0.16.1, build from source)
+git clone --branch v0.16.1 https://github.com/pytorch/vision torchvision
+cd torchvision
+python3 setup.py install --user
+
+# NVIDIA Jetson-specific Wheels
+pip install https://nvidia.box.com/shared/static/p57jwntpfmy68pq0g3qvytrjgybqg6wq.whl
+pip install https://nvidia.box.com/shared/static/czn7l7z5n6adkfqei6k0fcrlq8l6svdb.whl

@@ -261,15 +261,37 @@ cd webapp\frontend && npm install && npm run dev   # localhost:3000
 ## 저장소 구조
 
 ```
-├── webapp/           # 웹 데모 (현재 주 개발 — Next.js + FastAPI)
-│   ├── backend/      #   FastAPI 게이트웨이, Hybrid RAG, Vision, TTS
-│   ├── frontend/     #   Next.js 15 UI
+├── webapp/            # 웹 데모 (현재 주 개발 — Next.js + FastAPI)
+│   ├── backend/       #   FastAPI 게이트웨이, Hybrid RAG, Vision, TTS
+│   ├── frontend/      #   Next.js 15 UI
+│   ├── scripts/       #   데모 기동 자동화 (PowerShell)
 │   ├── ARCHITECTURE.md
+│   ├── PORTFOLIO.md   #   설계 결정 · 실측 근거 정리
 │   └── DEPLOY.md
-├── nx/               # Jetson Orin NX 온디바이스 원본
-├── vlm_server/       # Jetson AGX Orin + 파인튜닝 스크립트
-└── robros/           # 실험 기록 · 스크린샷 · GGUF 변환 도구
+│
+├── on-device/         # Jetson 온디바이스 (정리본 + llama.cpp CUDA 빌드 가이드)
+│   └── app/llm_chat_rag.py    # 온디바이스 RAG 경로
+├── server-based/      # 서버 기반 실행 (정리본)
+│   └── scripts/rag_engine.py  # FAISS + BM25 초기 하이브리드 구현
+│
+├── nx/                # Jetson Orin NX 원본 작업본 (프로파일 YAML 포함)
+├── vlm_server/        # Jetson AGX Orin 원본 + 성능 측정 스크립트
+└── robros/            # 실험 기록 · 스크린샷 · GGUF 변환 도구
 ```
+
+> `on-device/` · `server-based/`는 발표용으로 정리한 스냅샷,
+> `nx/` · `vlm_server/`는 실험이 그대로 남아 있는 원본 작업본이다.
+> 웹 데모(`webapp/`)는 이 계보를 이어받아 재설계했다.
+
+### RAG 구현이 두 갈래인 이유
+
+| 위치 | 구성 | 임베딩 | 한계 / 개선 |
+|---|---|---|---|
+| `server-based/scripts/rag_engine.py` | FAISS + BM25 (set union) | `paraphrase-albert-small-v2` | 영어 전용 모델 → **한국어 질의에서 Dense 검색이 사실상 무작위** |
+| `webapp/backend/rag/store.py` | ChromaDB + BM25 (**RRF**) | **bge-m3** (멀티링구얼) | 한국어 대응, 순위 기반 융합, PDF 업로드·페르소나별 격리 |
+
+초기 하이브리드는 임베딩 모델이 한국어를 지원하지 않아 HRI 환경에서 쓸 수 없었다.
+멀티링구얼 임베딩으로 교체하고, 단순 합집합 대신 RRF로 융합하도록 재설계했다.
 
 ## 기술 스택
 
