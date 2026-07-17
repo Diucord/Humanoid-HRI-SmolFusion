@@ -265,9 +265,10 @@ cd webapp\frontend && npm install && npm run dev   # localhost:3000
 │   ├── backend/       #   FastAPI 게이트웨이, Hybrid RAG, Vision, TTS
 │   ├── frontend/      #   Next.js 15 UI
 │   ├── scripts/       #   데모 기동 자동화 (PowerShell)
-│   ├── ARCHITECTURE.md
-│   ├── PORTFOLIO.md   #   설계 결정 · 실측 근거 정리
-│   └── DEPLOY.md
+│   ├── ARCHITECTURE.md    # 구현 상세
+│   ├── PORTFOLIO.md       # 설계 결정 · 실측 근거
+│   ├── JETSON_PORTING.md  # 온디바이스 이식 최적화 기록
+│   └── DEPLOY.md          # 배포 (Vercel + Cloudflare Tunnel)
 │
 ├── on-device/         # Jetson 온디바이스 (정리본 + llama.cpp CUDA 빌드 가이드)
 │   └── app/llm_chat_rag.py    # 온디바이스 RAG 경로

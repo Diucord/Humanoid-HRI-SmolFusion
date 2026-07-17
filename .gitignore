@@ -76,3 +76,7 @@ webapp/logs/
 # 파인튜닝 근거 파일은 예외로 포함 (수 KB, 학습 기록 증빙)
 !vlm_server/finetune/igris-tuned/checkpoint-*/trainer_state.json
 !vlm_server/finetune/igris-tuned/checkpoint-*/adapter_config.json
+
+# 개발 스크린샷 — 웹캠 테스트 화면에 인물이 포함되어 공개 저장소에 넣지 않음
+robros/Screenshots/
+**/Screenshots/
