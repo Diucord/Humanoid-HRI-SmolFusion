@@ -12,7 +12,7 @@
 
 - **코드명**: SmolFusion (온디바이스 계보) / Hera (웹 데모)
 - **GitHub**: https://github.com/Diucord/Humanoid-HRI-SmolFusion
-- **Live Demo**: https://frontend-three-lac-47.vercel.app
+- **Live Demo**: https://hera-hri.vercel.app
 - **관련 저장소**: [Qwen3-Persona-Trainer](https://github.com/Diucord/Qwen3-Persona-Trainer) (QLoRA 파인튜닝 파이프라인)
 - **기간 / 역할**: 로브로스 Physical AI 사업부 인턴 (2025.06–2025.09) 수행 후 개인 확장 개발
 - **분류**: 개인 프로젝트 (실무 경험 기반 재설계 및 웹 확장)

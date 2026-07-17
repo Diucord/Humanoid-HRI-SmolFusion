@@ -3,7 +3,7 @@
 경량 VLM과 파인튜닝 LLM을 동시 구동해 실시간 인간-로봇 상호작용(HRI)을 구현한 시스템.
 Jetson 온디바이스에서 출발해, 브라우저에서 바로 체험 가능한 웹 데모까지 확장했다.
 
-**[Live Demo](https://frontend-three-lac-47.vercel.app)** — 프론트는 Vercel에 상주하고,
+**[Live Demo — hera-hri.vercel.app](https://hera-hri.vercel.app)** — 프론트는 Vercel에 상주하고,
 추론 백엔드(GPU)는 개발 PC에서 Cloudflare Tunnel로 연결된다.
 백엔드가 꺼져 있으면 오프라인 배너가 표시된다.
 
