@@ -1,0 +1,122 @@
+[
+  {
+    "intent": "greeting",
+    "action": "say_hello",
+    "description": "Initiates a greeting or friendly interaction"
+  },
+  {
+    "intent": "self_intro",
+    "action": "introduce_self",
+    "description": "Provides the robot's name, identity, or role"
+  },
+  {
+    "intent": "capability_info",
+    "action": "explain_ability",
+    "description": "Describes the robot's functions and abilities"
+  },
+  {
+    "intent": "company_info",
+    "action": "explain_company",
+    "description": "Describes the company or organization behind the robot"
+  },
+  {
+    "intent": "compare_model",
+    "action": "compare_models",
+    "description": "Compares two or more robot models"
+  },
+  {
+    "intent": "emotional_response",
+    "action": "react_to_emotion",
+    "description": "Responds to the user's emotional state"
+  },
+  {
+    "intent": "compliment_response",
+    "action": "react_to_compliment",
+    "description": "Responds to compliments or positive feedback"
+  },
+  {
+    "intent": "conversation_check",
+    "action": "confirm_interaction",
+    "description": "Confirms whether conversation is possible"
+  },
+  {
+    "intent": "status_check",
+    "action": "report_status",
+    "description": "Reports system or operational status"
+  },
+  {
+    "intent": "location_query",
+    "action": "report_location",
+    "description": "Indicates the robot's physical location"
+  },
+  {
+    "intent": "task_start",
+    "action": "start_task",
+    "description": "Initiates a task or command"
+  },
+  {
+    "intent": "task_stop",
+    "action": "stop_task",
+    "description": "Stops a current action or process"
+  },
+  {
+    "intent": "movement_command",
+    "action": "move_to_user",
+    "description": "Command to move toward the user"
+  },
+  {
+    "intent": "movement_command",
+    "action": "stop_movement",
+    "description": "Command to stop or hold movement"
+  },
+  {
+    "intent": "device_control",
+    "action": "turn_on_device",
+    "description": "Turns on a connected device"
+  },
+  {
+    "intent": "device_control",
+    "action": "turn_off_device",
+    "description": "Turns off a connected device"
+  },
+  {
+    "intent": "plan_query",
+    "action": "make_plan",
+    "description": "Asks for a plan or schedule"
+  },
+  {
+    "intent": "memory_command",
+    "action": "memory_control",
+    "description": "Requests to remember or forget something"
+  },
+  {
+    "intent": "error_report",
+    "action": "report_error",
+    "description": "Checks for errors or malfunction"
+  },
+  {
+    "intent": "version_info",
+    "action": "explain_model",
+    "description": "Provides model, version, or release information"
+  },
+  {
+    "intent": "skill_detail",
+    "action": "list_skills",
+    "description": "Describes advanced or high-difficulty skills"
+  },
+  {
+    "intent": "energy_check",
+    "action": "battery_status",
+    "description": "Checks battery or energy status"
+  },
+  {
+    "intent": "weather_query",
+    "action": "check_weather",
+    "description": "Provides information about the weather"
+  },
+  {
+    "intent": "no_intent",
+    "action": "idle_response",
+    "description": "Handles non-understood or idle input"
+  }
+]

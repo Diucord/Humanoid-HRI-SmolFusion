@@ -35,3 +35,40 @@ logs/
 assets/
 **/index.html
 *.env
+
+# ===== 대용량 / 빌드 산출물 추가 =====
+**/llama.cpp/
+**/torchvision/
+**/venv*/
+**/.venv/
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+**/merged-model/
+**/checkpoint-*/
+.chroma/
+.cache/
+
+# Node (frontend)
+node_modules/
+.next/
+out/
+.env.local
+
+# 임시/캐시
+*.mp3
+frame_*.jpg
+*.csv
+
+# 외부 바이너리 (재다운로드 가능 — 저장소에 넣지 않음)
+*.exe
+*.dll
+webapp/tunnel/
+
+# 별도 저장소 (Qwen3-Persona-Trainer) — 여기에 포함하지 않음
+qwen_trainer/
+
+# 데모 기동 로그
+webapp/logs/

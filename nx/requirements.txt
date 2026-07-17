@@ -1,0 +1,42 @@
+# JetPack 5.x + CUDA 11.4
+wget https://developer.download.nvidia.com/compute/redist/jp/v51/pytorch/torch-2.1.0+nv23.10-cp38-cp38-linux_aarch64.whl
+pip install torch-2.1.0+nv23.10-cp38-cp38-linux_aarch64.whl
+
+annotated_types==0.7.0
+cffi==1.15.1
+datasets==2.14.6
+docstring_parser==0.15
+edge_tts==6.1.0
+face_recognition==1.3.0
+fastapi==0.103.0
+GitPython==3.1.31
+googletrans==4.0.0rc1
+huggingface_hub==0.20.3
+instructor==1.7.0
+matplotlib==3.7.2
+mistral_common==1.2.0
+numpy==1.24.4
+openai==1.12.0
+opencv_python==4.8.1.78
+pandas==2.0.3
+Pillow==9.5.0
+pydantic==1.10.14
+PySide6==6.5.2
+pytest==7.4.2
+PyYAML==6.0
+Requests==2.31.0
+safetensors==0.4.2
+scikit_learn==1.3.0
+scipy==1.10.1
+seaborn==0.12.2
+sentencepiece==0.1.99
+tabulate==0.9.0
+torch==2.1.0+nv23.10   # NVIDIA JetPack 5.x용 PyTorch wheel
+torchvision==0.16.0+nv23.10
+torchaudio==2.1.0+nv23.10
+tqdm==4.65.0
+transformers==4.35.2
+typer==0.9.0
+typing_extensions==4.7.1
+uvicorn==0.23.2
+wget==3.2

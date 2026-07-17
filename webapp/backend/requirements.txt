@@ -1,0 +1,51 @@
+# ===== 전체 (VLM + LLM + RAG + 얼굴인식) =====
+# 설치 순서 주의 (Windows / RTX 3070):
+#
+#   conda create -n smolfusion python=3.10 -y
+#   conda activate smolfusion
+#
+#   # 1) PyTorch (CUDA 12.1)
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+#
+#   # 2) 나머지
+#   pip install -r requirements.txt
+#
+#   # 3) face_recognition (dlib 소스빌드 회피 — 아래 'face_recognition 설치' 참고)
+
+# --- 웹 레이어 ---
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.9
+pydantic>=2.0.0
+numpy>=1.26.0
+scipy>=1.11.0
+Pillow>=10.0.0
+pypdf>=4.0.0
+edge-tts>=6.1.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# --- VLM (Qwen3-VL) ---
+# Qwen3VLForConditionalGeneration 지원 위해 최신 transformers 필요
+transformers>=4.57.0
+accelerate>=0.30.0
+qwen-vl-utils>=0.0.8
+# 4-bit 양자화 (4B 변형을 8GB에 올릴 때)
+bitsandbytes>=0.43.0
+
+# --- RAG (Hybrid: Dense + Sparse) ---
+chromadb>=0.5.0
+sentence-transformers>=3.0.0
+FlagEmbedding>=1.2.0
+rank-bm25>=0.2.2
+
+# --- 얼굴 매칭 (dlib) ---
+# 아래 두 줄은 pip로 자동 설치되지만 dlib 소스빌드를 유발할 수 있음.
+# Windows에서는 requirements 설치 후 다음을 수동 실행 권장:
+#   pip install dlib-bin
+#   pip install --no-deps face_recognition
+#   pip install "git+https://github.com/ageitgey/face_recognition_models"
+#   pip install "setuptools<81"          # pkg_resources 복구 (face_recognition_models가 사용)
+# dlib-bin
+# face_recognition
+setuptools<81
