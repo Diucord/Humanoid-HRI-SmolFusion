@@ -1,113 +1,104 @@
-"""Qwen3-VL 기반 시각 분석.
+"""Qwen3-VL 기반 시각 분석 (llama.cpp HTTP).
 
-기존 SmolVLM(개별 프롬프트 × N회 HTTP 호출)을 Qwen3-VL 단일 호출로 교체.
+llama.cpp 서버(OpenAI 호환, --mmproj로 비전 지원)에 이미지를 base64로 전송.
 한 번의 추론으로 나이/성별/표정/장면을 JSON으로 받는다.
+
+기존 nx/app/smolvlm_infer.py의 HTTP 패턴을 따르되, Qwen3-VL-4B GGUF를 사용한다.
 """
+import io
 import json
 import re
-import threading
-from typing import Optional
+import base64
+import requests
 from PIL import Image
 
 from core import settings
 
 _VLM_PROMPT = (
-    "Analyze the person in this image. Respond with ONLY a JSON object, no extra text:\n"
+    "Analyze the people in this image. Respond with ONLY a JSON object, no extra text:\n"
     '{"has_person": true/false, '
+    '"person_count": <integer number of people>, '
     '"age_group": "child|teenager|young adult|middle aged|elderly", '
     '"gender": "male|female|unknown", '
     '"is_smiling": true/false, '
-    '"scene": "one short sentence describing the scene and the person\'s state"}'
+    '"scene": "one short sentence describing the scene and the person\'s state"}\n'
+    "age_group/gender refer to the most prominent person."
 )
 
 
 class QwenVLAnalyzer:
-    """지연 로딩 + 스레드 안전 싱글톤."""
+    """llama.cpp VLM 서버 HTTP 클라이언트."""
 
     def __init__(self):
-        self._model = None
-        self._processor = None
-        self._device = None
-        self._lock = threading.Lock()
-        self._load_failed = False
-
-    def _ensure_loaded(self):
-        if self._model is not None or self._load_failed:
-            return
-        with self._lock:
-            if self._model is not None or self._load_failed:
-                return
-            try:
-                import torch
-                from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
-
-                self._device = settings.resolve_device()
-                dtype = torch.float16 if self._device == "cuda" else torch.float32
-
-                load_kwargs = {"torch_dtype": dtype, "device_map": self._device}
-
-                # 4-bit / 8-bit 양자화 (4B 변형을 8GB에 올릴 때)
-                if settings.VLM_QUANTIZE in ("4bit", "8bit") and self._device == "cuda":
-                    from transformers import BitsAndBytesConfig
-                    if settings.VLM_QUANTIZE == "4bit":
-                        load_kwargs["quantization_config"] = BitsAndBytesConfig(
-                            load_in_4bit=True,
-                            bnb_4bit_compute_dtype=torch.float16,
-                            bnb_4bit_quant_type="nf4",
-                            bnb_4bit_use_double_quant=True,
-                        )
-                    else:
-                        load_kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
-                    load_kwargs.pop("torch_dtype", None)
-
-                print(f"[QwenVL] loading {settings.VLM_MODEL_ID} on {self._device} "
-                      f"(quantize={settings.VLM_QUANTIZE}) ...")
-                self._processor = AutoProcessor.from_pretrained(settings.VLM_MODEL_ID)
-                self._model = Qwen3VLForConditionalGeneration.from_pretrained(
-                    settings.VLM_MODEL_ID, **load_kwargs
-                )
-                print("[QwenVL] loaded.")
-            except Exception as e:
-                print(f"[QwenVL] load failed, falling back to rule-based: {e}")
-                self._load_failed = True
+        self._url = settings.VLM_URL
+        self._model = settings.VLM_MODEL
 
     def available(self) -> bool:
-        self._ensure_loaded()
-        return self._model is not None
+        try:
+            r = requests.get(f"{self._url}/health", timeout=2)
+            return r.status_code == 200
+        except Exception:
+            return False
+
+    def describe_appearance(self, image: Image.Image) -> str:
+        """외모/패션 묘사 (한국어). '나 어때 보여?' 류 질문 응답용."""
+        try:
+            data_url = _image_to_data_url(image)
+            prompt = (
+                "이 사람의 외모, 표정, 분위기를 따뜻하고 긍정적으로 한국어 2문장 이내로 묘사해줘. "
+                "로봇이 사람에게 말하듯 친근하게."
+            )
+            payload = {
+                "model": self._model,
+                "messages": [{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": data_url}},
+                    ],
+                }],
+                "max_tokens": 100,
+                "temperature": 0.6,
+            }
+            r = requests.post(f"{self._url}/v1/chat/completions", json=payload, timeout=60)
+            r.raise_for_status()
+            return r.json()["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            print(f"[QwenVL] 외모 묘사 오류: {e}")
+            return "지금은 잘 보이지 않네요. 다시 한 번 봐주시겠어요?"
 
     def analyze(self, image: Image.Image) -> dict:
         """이미지 → {has_person, age_group, gender, is_smiling, scene}"""
-        self._ensure_loaded()
-        if self._model is None:
-            return _rule_based_fallback(image)
-
         try:
-            import torch
-            messages = [{
-                "role": "user",
-                "content": [
-                    {"type": "image", "image": image},
-                    {"type": "text", "text": _VLM_PROMPT},
-                ],
-            }]
-            inputs = self._processor.apply_chat_template(
-                messages,
-                tokenize=True,
-                add_generation_prompt=True,
-                return_dict=True,
-                return_tensors="pt",
+            data_url = _image_to_data_url(image)
+            payload = {
+                "model": self._model,
+                "messages": [{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": _VLM_PROMPT},
+                        {"type": "image_url", "image_url": {"url": data_url}},
+                    ],
+                }],
+                "max_tokens": settings.VLM_MAX_TOKENS,
+                "temperature": 0.2,
+            }
+            r = requests.post(
+                f"{self._url}/v1/chat/completions", json=payload, timeout=60
             )
-            inputs.pop("token_type_ids", None)  # Qwen3-VL generate 호환
-            inputs = inputs.to(self._device)
-
-            with torch.no_grad():
-                out = self._model.generate(**inputs, max_new_tokens=settings.VLM_MAX_TOKENS, do_sample=False)
-            trimmed = out[:, inputs["input_ids"].shape[1]:]
-            text = self._processor.batch_decode(trimmed, skip_special_tokens=True)[0]
+            r.raise_for_status()
+            text = r.json()["choices"][0]["message"]["content"]
             return _parse_vlm_json(text)
         except Exception as e:
-            print(f"[QwenVL] inference error: {e}")
-            return _rule_based_fallback(image)
+            print(f"[QwenVL] inference error (VLM 서버 미기동?): {e}")
+            return _rule_based_fallback()
+
+
+def _image_to_data_url(image: Image.Image) -> str:
+    buf = io.BytesIO()
+    image.convert("RGB").save(buf, format="JPEG", quality=70)
+    b64 = base64.b64encode(buf.getvalue()).decode()
+    return "data:image/jpeg;base64," + b64
 
 
 def _parse_vlm_json(text: str) -> dict:
@@ -120,8 +111,14 @@ def _parse_vlm_json(text: str) -> dict:
     except json.JSONDecodeError:
         return {"has_person": False, "scene": text.strip()[:120]}
 
+    try:
+        person_count = int(data.get("person_count", 0))
+    except (ValueError, TypeError):
+        person_count = 0
+
     return {
         "has_person": bool(data.get("has_person", False)),
+        "person_count": max(person_count, 0),
         "age_group": _norm_age(data.get("age_group", "unknown")),
         "gender": data.get("gender") if data.get("gender") in ("male", "female") else "unknown",
         "is_smiling": bool(data.get("is_smiling", False)),
@@ -135,14 +132,15 @@ def _norm_age(s: str) -> str:
     return s if s in valid else "unknown"
 
 
-def _rule_based_fallback(image: Image.Image) -> dict:
-    """VLM 로드 실패 시 최소 동작 (얼굴 유무는 face_recognition이 별도 판단)."""
+def _rule_based_fallback() -> dict:
+    """VLM 서버 미기동 시 최소 동작 (얼굴 유무는 face_recognition이 별도 판단)."""
     return {
         "has_person": True,
+        "person_count": 1,
         "age_group": "unknown",
         "gender": "unknown",
         "is_smiling": False,
-        "scene": "환경을 분석할 수 없습니다 (VLM 비활성).",
+        "scene": "환경을 분석할 수 없습니다 (VLM 서버 미기동).",
     }
 
 

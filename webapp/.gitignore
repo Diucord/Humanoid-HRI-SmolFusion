@@ -13,7 +13,16 @@ node_modules/
 out/
 .env.local
 
-# 모델/캐시
+# 모델 가중치 (수 GB — git 제외)
 *.gguf
+*.safetensors
 .cache/
 models/
+
+# llama.cpp 바이너리 (1GB+ — 릴리스에서 다운로드)
+llamacpp/
+
+# 런타임 산출물
+*.mp3
+output.mp3
+backend/config/user_personas.json

@@ -20,28 +20,29 @@ def _env(key: str, default: str) -> str:
 # auto: CUDA 있으면 cuda, 없으면 cpu
 DEVICE = _env("DEVICE", "auto")
 
-# ===== VLM (Qwen3-VL) =====
-# 로컬 RTX 3070 8GB 기준.
-#   2B-Instruct : FP16로 ~4-5GB, LLM과 동시 구동 안전
-#   4B-Instruct : 4-bit 양자화 권장 (VLM_QUANTIZE=4bit), 정확도 손실 ~1%
-VLM_MODEL_ID = _env("VLM_MODEL_ID", "Qwen/Qwen3-VL-2B-Instruct")
+# ===== VLM (Qwen3-VL via llama.cpp) =====
+# llama.cpp 서버(--mmproj 비전 지원)에 HTTP로 호출.
+#   모델: Qwen3VL-4B-Instruct-Q4_K_M.gguf + mmproj-Qwen3VL-4B-Instruct-Q8_0.gguf
+VLM_URL = _env("VLM_URL", "http://127.0.0.1:8081")
+VLM_MODEL = _env("VLM_MODEL", "Qwen3VL-4B-Instruct-Q4_K_M.gguf")
 VLM_MAX_TOKENS = int(_env("VLM_MAX_TOKENS", "64"))
 VLM_ENABLED = _env("VLM_ENABLED", "true").lower() == "true"
-# none | 4bit | 8bit  (bitsandbytes 필요)
-VLM_QUANTIZE = _env("VLM_QUANTIZE", "none").lower()
 
-# ===== LLM (파인튜닝 Qwen3) =====
-# llama.cpp 서버(OpenAI 호환) URL. 없으면 로컬 transformers 폴백.
-LLM_BACKEND = _env("LLM_BACKEND", "llamacpp")  # llamacpp | transformers
-LLM_URL = _env("LLM_URL", "http://127.0.0.1:8080")
-LLM_MODEL = _env("LLM_MODEL", "qwen3-igris-1.7b")
+# ===== LLM =====
+# 두 개의 llama.cpp 서버를 페르소나에 따라 라우팅:
+#   - 파인튜닝 igris (8080): 이그리스 C 전용
+#   - 일반 Qwen3-1.7B (8082): 커스텀 등 나머지 페르소나
+LLM_FINETUNED_URL = _env("LLM_FINETUNED_URL", "http://127.0.0.1:8080")
+LLM_FINETUNED_MODEL = _env("LLM_FINETUNED_MODEL", "qwen3-igris-1.7b")
+LLM_GENERAL_URL = _env("LLM_GENERAL_URL", "http://127.0.0.1:8082")
+LLM_GENERAL_MODEL = _env("LLM_GENERAL_MODEL", "Qwen3-1.7B-Q8_0.gguf")
+
 LLM_MAX_TOKENS = int(_env("LLM_MAX_TOKENS", "256"))
+# 일반 LLM은 CPU라 느리므로 응답을 더 짧게 제한
+LLM_GENERAL_MAX_TOKENS = int(_env("LLM_GENERAL_MAX_TOKENS", "150"))
+# 파인튜닝 igris: 낮은 temp로 정체성 일관성 유지 (환각 방지)
+LLM_FINETUNED_TEMPERATURE = float(_env("LLM_FINETUNED_TEMPERATURE", "0.3"))
 LLM_TEMPERATURE = float(_env("LLM_TEMPERATURE", "0.7"))
-# transformers 폴백용 로컬 머지 모델 경로
-LLM_LOCAL_PATH = _env(
-    "LLM_LOCAL_PATH",
-    str(BASE_DIR.parent.parent / "vlm_server" / "finetune" / "igris-tuned" / "merged-model"),
-)
 
 # ===== RAG =====
 EMBED_MODEL = _env("EMBED_MODEL", "BAAI/bge-m3")

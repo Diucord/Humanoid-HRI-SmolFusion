@@ -61,3 +61,8 @@ out/
 *.mp3
 frame_*.jpg
 *.csv
+
+# 외부 바이너리 (재다운로드 가능 — 저장소에 넣지 않음)
+*.exe
+*.dll
+webapp/tunnel/

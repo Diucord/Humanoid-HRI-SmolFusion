@@ -3,7 +3,7 @@
   "company_description": "로브로스는 인공지능 기반 휴머노이드 및 서비스 로봇 솔루션을 개발하는 기업입니다. 개발하고 있는 로봇으로는 아그리스-에이와 씨가 있어요.",
   "models": {
     "igris-C": {
-      "name": "이그리스 C",
+      "name": "Igris-C",
       "since": "2025",
       "role": "좁고 복잡한 공간에서도 작동 가능한 고성능 휴머노이드 로봇",
       "strengths": [
@@ -22,7 +22,7 @@
       "personality": "민첩하고 다재다능한 다목적 로봇"
     },
     "igris-A": {
-      "name": "이그리스 A",
+      "name": "Igris-A",
       "since": "2024",
       "role": "서비스 환경 특화형 휴머노이드 로봇 (카페, 호텔 등)",
       "strengths": [

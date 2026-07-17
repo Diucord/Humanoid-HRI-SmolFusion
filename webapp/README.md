@@ -1,96 +1,128 @@
-# Humanoid HRI · SmolFusion — Web Demo
+# Hera — Human-robot Engagement Responsive AI
 
 실시간 멀티모달 HRI(Human-Robot Interaction) 웹 데모.
-음성으로 말하면 → 인식된 텍스트가 화면에 뜨고 → 페르소나에 맞춰 응답(텍스트+음성)합니다.
-카메라를 켜면 Vision 모델이 사람을 분석해 대화 컨텍스트로 활용하고, 문서를 올리면 RAG로 지식을 보강합니다.
+카메라로 사람을 인식하고, 음성으로 대화하며, 페르소나·RAG·파인튜닝 LLM을 결합합니다.
+
+> 상세 설계·구현은 [ARCHITECTURE.md](ARCHITECTURE.md) 참고.
 
 ```
-┌─ Frontend: Next.js (React) ──────────────────────┐
-│  웹캠 · 🎤마이크(STT) · 채팅 · 페르소나 · 문서업로드   │
-└──────────────────┬───────────────────────────────┘
-                   │ HTTP
-┌──────────────────▼───────────────────────────────┐
-│  Backend: FastAPI (RTX 3070 로컬 추론)             │
-│  /vision  face_recognition + Qwen3-VL (나이/성별/표정/장면)
-│  /chat    페르소나 + RAG + 파인튜닝 Qwen3 LLM
-│  /rag     문서 → bge-m3 임베딩 → ChromaDB
-│  /tts     edge-tts (mp3)
-└──────────────────────────────────────────────────┘
+Frontend (Next.js, Vercel 대상)
+   └ 웹캠 · 마이크(STT) · 채팅 · 페르소나 · RAG · 로봇 캐릭터
+        │ HTTP
+Backend (FastAPI, 로컬 RTX 3070)
+   └ 얼굴매칭 · 대화 라우팅 · RAG · 페르소나 · TTS
+        │ HTTP
+llama.cpp × 3  (VLM 8081 · 파인튜닝 LLM 8080 · 일반 LLM 8082)
 ```
 
-## 구성 요소
-
-| 레이어 | 기술 | 비고 |
-|--------|------|------|
-| STT (음성→텍스트) | Web Speech API | 브라우저 내장, 한국어 지원 |
-| VLM (시각 분석) | Qwen3-VL-2B-Instruct | 나이/성별/표정/장면 단일 호출 JSON |
-| 얼굴 매칭 | face_recognition (128D) | 동일인 판단, 본인 파이프라인 |
-| LLM (대화) | 파인튜닝 Qwen3-1.7B | llama.cpp(GGUF) 또는 transformers |
-| RAG | bge-m3 + ChromaDB | 페르소나별 지식 베이스 |
-| TTS (텍스트→음성) | edge-tts | 페르소나별 보이스 |
+## 주요 기능
+- 🎥 **실시간 시각 분석** — Qwen3-VL-4B + face_recognition (나이/성별/표정/인원/장면)
+- 🆕 **자동 인사** — 새 사람 감지 시 연령·성별 맞춤 인사
+- 🎙️ **음성 대화** — Web Speech API(STT, 연속) + edge-tts(TTS)
+- 🤖 **페르소나** — 이그리스 C(파인튜닝) / 커스텀(슬라이더) / 사용자 직접 생성
+- 📚 **RAG** — bge-m3 + ChromaDB, 문서 업로드 후 검색 증강
+- 💬 **로봇 캐릭터** — 상태별(대기/듣기/말하기/생각/인사) 눈 변화
 
 ---
 
 ## 실행 방법
 
-### 1) 백엔드 (FastAPI)
+전제: **conda 환경 `smolfusion` (Python 3.10)**, **RTX 3070급 GPU**, Node 18+.
 
+### 0) 모델 & llama.cpp 준비 (최초 1회)
+
+`webapp/models/`에 GGUF 다운로드:
 ```powershell
-# conda 환경 (Python 3.10 권장 — dlib 호환)
-conda create -n smolfusion python=3.10 -y
-conda activate smolfusion
-
-cd webapp\backend
-
-# PyTorch (CUDA 12.1 기준 — RTX 3070)
-pip install torch --index-url https://download.pytorch.org/whl/cu121
-
-pip install -r requirements.txt
-
-# 환경 설정
-copy .env.example .env   # 필요 시 수정
-
-# (옵션) LLM: 파인튜닝 GGUF를 llama.cpp 서버로 띄우기
-#   llama-server -m qwen3-igris-1.7b.Q4_K_M.gguf -ngl 99 --host 0.0.0.0 --port 8080
-#   또는 .env에서 LLM_BACKEND=transformers 로 로컬 머지모델 직접 추론
-
-python app.py   # → http://localhost:8000
+# VLM
+huggingface-cli download Qwen/Qwen3-VL-4B-Instruct-GGUF Qwen3VL-4B-Instruct-Q4_K_M.gguf --local-dir models
+huggingface-cli download Qwen/Qwen3-VL-4B-Instruct-GGUF mmproj-Qwen3VL-4B-Instruct-Q8_0.gguf --local-dir models
+# 일반 LLM
+huggingface-cli download Qwen/Qwen3-1.7B-GGUF Qwen3-1.7B-Q8_0.gguf --local-dir models
+# 파인튜닝 igris (기존 자산): nx/models/qwen3-igris-1.7b.Q4_K_M.gguf
 ```
 
-> **face_recognition (dlib)**: Windows에서 빌드가 까다로우면
-> `pip install dlib-bin` 또는 미리 빌드된 휠을 사용하세요.
-> 얼굴 매칭 없이도(임베딩 None) 나머지는 정상 동작합니다.
+`webapp/llamacpp/`에 llama.cpp Windows CUDA 빌드 압축 해제
+(https://github.com/ggml-org/llama.cpp/releases — `llama-*-bin-win-cuda-12.4-x64.zip` + `cudart-*`).
 
-### 2) 프론트엔드 (Next.js)
+### 1) llama.cpp 서버 3개 기동
+
+```powershell
+$L = "webapp\llamacpp\llama-server.exe"
+$M = "webapp\models"
+
+# VLM (포트 8081, GPU)
+& $L -m "$M\Qwen3VL-4B-Instruct-Q4_K_M.gguf" --mmproj "$M\mmproj-Qwen3VL-4B-Instruct-Q8_0.gguf" -ngl 99 -c 4096 --port 8081
+
+# 파인튜닝 이그리스 (포트 8080, GPU)
+& $L -m "nx\models\qwen3-igris-1.7b.Q4_K_M.gguf" -ngl 99 -c 4096 --port 8080 --alias qwen3-igris-1.7b
+
+# 일반 LLM (포트 8082, CPU — VRAM 절약)
+& $L -m "$M\Qwen3-1.7B-Q8_0.gguf" -ngl 0 -c 4096 -t 8 --port 8082 --alias Qwen3-1.7B-Q8_0.gguf
+```
+
+### 2) 백엔드 (FastAPI)
+
+```powershell
+conda activate smolfusion
+cd webapp\backend
+copy .env.example .env          # 필요 시 수정
+python app.py                   # → http://localhost:8000
+```
+
+의존성 최초 설치:
+```powershell
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+pip install -r requirements.txt
+# face_recognition (dlib 소스빌드 회피)
+pip install dlib-bin
+pip install --no-deps face_recognition
+pip install "git+https://github.com/ageitgey/face_recognition_models"
+pip install "setuptools<81"
+```
+
+### 3) 프론트엔드 (Next.js)
 
 ```powershell
 cd webapp\frontend
 npm install
-copy .env.local.example .env.local   # API URL 확인
-npm run dev   # → http://localhost:3000
+copy .env.local.example .env.local
+npm run dev                     # → http://localhost:3000
 ```
 
-브라우저에서 `http://localhost:3000` 접속.
+브라우저에서 **http://localhost:3000** 접속 (Chrome/Edge 권장 — 음성 인식).
 
 ---
 
-## 모델 선택 메모
+## RAG 테스트
 
-- **VLM**: 2026년 기준 경량 VLM 중 Qwen3-VL이 한국어·OCR에서 우위. RTX 3070 8GB에 2B 변형이 적합.
-  더 가볍게 하려면 `.env`의 `VLM_MODEL_ID`를 변경하거나 `VLM_ENABLED=false`로 끄면
-  얼굴 매칭만 동작합니다.
-- **LLM**: 기존 파인튜닝 자산(Qwen3-1.7B-igris)을 그대로 재활용.
-  GGUF가 있으면 `llamacpp`(빠름), 없으면 `transformers`로 머지 모델 직접 로딩.
-- **임베딩**: bge-m3는 멀티링구얼 RAG 표준급. 처음 실행 시 모델 다운로드가 있습니다.
+`sample_rag/english_study.txt` + `sample_rag/README_영어튜터.md` 참고.
+→ "영어 튜터" 페르소나 생성 후 문서 업로드, "핸드폰을 영어로?" 등 질문.
 
-## 배포 (나중에)
+---
 
-로컬 검증 후 Cloud Run + GPU(L4)로 백엔드 컨테이너를 올리고,
-프론트는 Vercel 또는 Cloud Run으로 배포하면 "누구나 접속하는 라이브 데모"가 됩니다.
-(Dockerfile은 추후 추가)
+## 배포 (포폴 라이브 데모)
+
+- **프론트**: Vercel (무료, 항상 켜짐)
+- **백엔드**: 로컬 PC + Cloudflare Tunnel (파인튜닝 모델 그대로, GPU 활용)
+- PC가 켜져 있을 때만 데모 작동 → 오프라인 폴백 안내 권장
+
+---
+
+## 환경 변수 (backend/.env)
+
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
+| `DEVICE` | auto | cuda/cpu 자동 |
+| `VLM_URL` / `VLM_MODEL` | :8081 / Qwen3VL-4B | 비전 |
+| `LLM_FINETUNED_URL` | :8080 | 이그리스 |
+| `LLM_GENERAL_URL` | :8082 | 일반 |
+| `LLM_FINETUNED_TEMPERATURE` | 0.3 | 정체성 일관성 |
+| `EMBED_MODEL` | BAAI/bge-m3 | RAG 임베딩 |
+| `CORS_ORIGINS` | localhost:3000 | (Vercel 도메인 추가) |
+
+---
 
 ## 기존 코드와의 관계
-
-- `nx/`, `vlm_server/agx/` : Jetson 온디바이스 원본 (참고/보존)
-- `qwen_trainer/`, `vlm_server/finetune/` : LLM 파인튜닝 파이프라인 (재활용)
-- `webapp/` : 이 웹 데모 (신규)
+- `nx/`, `vlm_server/agx/` — Jetson 온디바이스 원본 (보존)
+- `qwen_trainer/`, `vlm_server/finetune/` — LLM 파인튜닝 파이프라인
+- `webapp/` — 이 웹 데모 (신규)

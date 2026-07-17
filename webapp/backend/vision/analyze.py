@@ -57,10 +57,12 @@ def analyze_person(image: Image.Image) -> dict:
 
     return {
         "has_person": has_person,
+        "person_count": vlm_result.get("person_count", 1 if has_person else 0),
         "age_group": vlm_result.get("age_group", "unknown"),
         "gender": vlm_result.get("gender", "unknown"),
         "is_smiling": vlm_result.get("is_smiling", False),
         "scene": vlm_result.get("scene", ""),
+        "face_detected": face_vector is not None,
         "face_vector": face_vector,
     }
 

@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
+import { Poppins } from "next/font/google";
 import "./globals.css";
 
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-poppins",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "Humanoid HRI · SmolFusion",
-  description: "실시간 멀티모달 HRI 데모 — Vision · RAG · 페르소나 대화",
+  title: "Hera — Realtime Multimodal-Interactive AI System",
+  description: "VLM · RAG · Custom Persona",
 };
 
 export default function RootLayout({
@@ -12,7 +20,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko">
+    <html lang="ko" className={poppins.variable}>
+      <head>
+        {/* Pretendard (한글) */}
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+        />
+      </head>
       <body>{children}</body>
     </html>
   );

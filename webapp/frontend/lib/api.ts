@@ -8,21 +8,36 @@ export interface Persona {
   language: string;
   voice: string;
   tags: string[];
+  user_created?: boolean;
 }
 
 export interface VisionResult {
   has_person: boolean;
+  person_count: number;
   age_group: string;
   gender: string;
   is_smiling: boolean;
   scene: string;
+  face_detected: boolean;
   is_new_person: boolean;
+  greeting?: string;
 }
 
 export interface ChatResponse {
   source: string;
   text: string;
   rag_used?: boolean;
+}
+
+export async function checkHealth(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API}/health`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 export async function fetchPersonas(): Promise<Persona[]> {
@@ -33,13 +48,22 @@ export async function fetchPersonas(): Promise<Persona[]> {
 
 export async function analyzeFrame(
   sessionId: string,
-  blob: Blob
+  blob: Blob,
+  manual = false
 ): Promise<VisionResult> {
   const fd = new FormData();
   fd.append("session_id", sessionId);
+  fd.append("manual", manual ? "true" : "false");
   fd.append("image", blob, "frame.jpg");
   const res = await fetch(`${API}/vision/analyze`, { method: "POST", body: fd });
   return res.json();
+}
+
+export interface Traits {
+  friendliness: number;
+  knowledge: number;
+  empathy: number;
+  formality: number;
 }
 
 export async function sendChat(params: {
@@ -49,6 +73,7 @@ export async function sendChat(params: {
   customPrompt?: string;
   visionContext?: string;
   useRag?: boolean;
+  traits?: Traits;
 }): Promise<ChatResponse> {
   const res = await fetch(`${API}/chat`, {
     method: "POST",
@@ -60,6 +85,7 @@ export async function sendChat(params: {
       custom_prompt: params.customPrompt || "",
       vision_context: params.visionContext || "",
       use_rag: params.useRag ?? true,
+      traits: params.traits || null,
     }),
   });
   return res.json();
@@ -91,6 +117,28 @@ export async function speak(text: string, lang = "ko", voice?: string): Promise<
     body: JSON.stringify({ text, lang, voice }),
   });
   return res.blob();
+}
+
+export async function createPersona(params: {
+  name: string;
+  systemPrompt: string;
+  traits: Traits;
+}): Promise<Persona> {
+  const res = await fetch(`${API}/personas`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: params.name,
+      system_prompt: params.systemPrompt,
+      traits: params.traits,
+    }),
+  });
+  const data = await res.json();
+  return data.persona;
+}
+
+export async function deletePersona(personaId: string): Promise<void> {
+  await fetch(`${API}/personas/${personaId}`, { method: "DELETE" });
 }
 
 export async function resetSession(sessionId: string): Promise<void> {

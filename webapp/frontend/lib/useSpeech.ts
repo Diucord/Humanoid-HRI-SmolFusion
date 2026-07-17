@@ -11,6 +11,7 @@ export function useSpeechRecognition(lang = "ko-KR") {
   const [interim, setInterim] = useState("");
   const recogRef = useRef<SpeechRecognition | null>(null);
   const onFinalRef = useRef<((text: string) => void) | null>(null);
+  const wantListeningRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -24,7 +25,7 @@ export function useSpeechRecognition(lang = "ko-KR") {
     setSupported(true);
     const recog = new SR();
     recog.lang = lang;
-    recog.continuous = false;
+    recog.continuous = true; // 중단 버튼 누를 때까지 계속 듣기
     recog.interimResults = true;
 
     recog.onresult = (event: any) => {
@@ -42,11 +43,26 @@ export function useSpeechRecognition(lang = "ko-KR") {
         onFinalRef.current?.(finalText);
       }
     };
-    recog.onend = () => setListening(false);
-    recog.onerror = () => setListening(false);
+    // continuous 모드: 브라우저가 침묵으로 끊어도 사용자가 stop 전이면 자동 재시작
+    recog.onend = () => {
+      if (wantListeningRef.current) {
+        try {
+          recog.start();
+        } catch {}
+      } else {
+        setListening(false);
+      }
+    };
+    recog.onerror = (e: any) => {
+      if (e?.error === "not-allowed" || e?.error === "service-not-allowed") {
+        wantListeningRef.current = false;
+        setListening(false);
+      }
+    };
 
     recogRef.current = recog;
     return () => {
+      wantListeningRef.current = false;
       try {
         recog.abort();
       } catch {}
@@ -56,6 +72,7 @@ export function useSpeechRecognition(lang = "ko-KR") {
   const start = useCallback((onFinal?: (text: string) => void) => {
     if (!recogRef.current) return;
     onFinalRef.current = onFinal || null;
+    wantListeningRef.current = true;
     setInterim("");
     try {
       recogRef.current.start();
@@ -64,6 +81,7 @@ export function useSpeechRecognition(lang = "ko-KR") {
   }, []);
 
   const stop = useCallback(() => {
+    wantListeningRef.current = false;
     recogRef.current?.stop();
     setListening(false);
   }, []);

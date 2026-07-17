@@ -33,10 +33,11 @@ qwen-vl-utils>=0.0.8
 # 4-bit 양자화 (4B 변형을 8GB에 올릴 때)
 bitsandbytes>=0.43.0
 
-# --- RAG ---
+# --- RAG (Hybrid: Dense + Sparse) ---
 chromadb>=0.5.0
 sentence-transformers>=3.0.0
 FlagEmbedding>=1.2.0
+rank-bm25>=0.2.2
 
 # --- 얼굴 매칭 (dlib) ---
 # 아래 두 줄은 pip로 자동 설치되지만 dlib 소스빌드를 유발할 수 있음.
