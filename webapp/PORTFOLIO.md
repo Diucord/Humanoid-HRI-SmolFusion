@@ -73,6 +73,17 @@
 | VLM+LLM 동시 상주 | **5.9GB / 8GB VRAM** | 프로세스 분리로 OOM 회피 |
 | 세션 메모리 상한 | **20턴 고정** | 500턴 주입 후에도 무증가 |
 
+**[QLoRA 파인튜닝 — 학습 로그 보존됨]**
+
+| 지표 | 값 |
+|---|---|
+| Train Loss | **17.81 → 0.29** (5 epoch, 1,465 steps) |
+| Eval Loss | **0.566 → 0.322** (best: step 1400) |
+| LoRA 구성 | `r=8`, `alpha=16`, target `q_proj`/`v_proj` |
+
+> 근거: [`trainer_state.json`](../vlm_server/finetune/igris-tuned/checkpoint-1465/trainer_state.json),
+> [`adapter_config.json`](../vlm_server/finetune/igris-tuned/checkpoint-1465/adapter_config.json)
+
 **[회사 장비 — RTX 5080 서버 / Jetson AGX Orin, 2025 인턴 시점 측정, 로그 미보존]**
 
 | 지표 | 측정값 |
@@ -298,7 +309,53 @@ FAISS + BM25 하이브리드였으나 두 가지 결함이 있었다.
 
 ---
 
-### ⑥ 페르소나 라우팅 — 상충하는 요구를 프로세스 분리로 해결
+### ⑥ QLoRA 파인튜닝 — 학습 기록 보존
+
+**목표** — 범용 Qwen3-1.7B에 로봇 페르소나(이그리스 C) 정체성을 주입.
+전체 파라미터 학습 대신 **QLoRA**로 제한된 GPU 자원에서 학습 가능하도록 구성.
+
+**설정** ([`adapter_config.json`](../vlm_server/finetune/igris-tuned/checkpoint-1465/adapter_config.json) — 실제 파일)
+
+| 항목 | 값 |
+|---|---|
+| Base Model | Qwen3-1.7B-Instruct |
+| PEFT | LoRA (`r=8`, `alpha=16`, `dropout=0.05`) |
+| Target Modules | `q_proj`, `v_proj` (Attention QV만) |
+| Task | CAUSAL_LM |
+| Batch Size | 4 |
+| Epochs | 5 (1,465 steps) |
+
+**학습 곡선**
+
+![Training & Evaluation Loss](../vlm_server/finetune/igris-tuned/loss_plot.png)
+
+**학습 결과** ([`trainer_state.json`](../vlm_server/finetune/igris-tuned/checkpoint-1465/trainer_state.json) — **실측 로그 보존됨**)
+
+| 구간 | Train Loss | Eval Loss |
+|---|---|---|
+| step 50 | 17.81 | — |
+| step 100 | 3.85 | 0.566 |
+| step 300 | — | 0.378 |
+| step 1400 (**best**) | 0.290 | **0.322** |
+| step 1450 | 0.289 | — |
+
+- **Train Loss 17.81 → 0.29** (5 epoch, 1,465 steps)
+- **Eval Loss 0.566 → 0.322** — best checkpoint는 step 1400
+- 총 연산량 `2.54e16 FLOPs`, eval 처리량 75.5 samples/sec
+- step 1400 이후 eval loss가 정체(0.3225 → 0.3221) → **과적합 직전에서 조기 종료 판단**
+
+**설계 관점** — `q_proj`/`v_proj`만 타겟팅한 것은 파라미터 효율 때문이다.
+전체 어텐션(`k_proj`, `o_proj` 포함) 대비 학습 파라미터를 절반으로 줄이면서
+페르소나 톤 학습에는 충분했다.
+
+**배포** — 학습된 어댑터를 머지 후 GGUF 변환 + Q4_K_M 양자화
+→ **3.21GB → 1.03GB (-68%)**, llama.cpp로 온디바이스/서버 양쪽 서빙
+
+> 파이프라인 상세: [Qwen3-Persona-Trainer](https://github.com/Diucord/Qwen3-Persona-Trainer)
+
+---
+
+### ⑦ 페르소나 라우팅 — 상충하는 요구를 프로세스 분리로 해결
 
 **문제** — 파인튜닝 페르소나는 **정체성 일관성**(낮은 temperature)이,
 범용 커스텀 페르소나는 **표현 다양성**(높은 temperature)이 필요하다.
@@ -316,7 +373,7 @@ FAISS + BM25 하이브리드였으나 두 가지 결함이 있었다.
 
 ---
 
-### ⑦ 배포 파이프라인 및 운영 자동화
+### ⑧ 배포 파이프라인 및 운영 자동화
 
 **구조** — 프론트는 상시 가동, GPU 백엔드는 개발 PC에 두는 하이브리드 배포
 ```
@@ -366,6 +423,8 @@ FAISS + BM25 하이브리드였으나 두 가지 결함이 있었다.
 | "왜 FAISS를 안 쓰나?" | 초기엔 FAISS+BM25였으나 임베딩(`albert-small`)이 **영어 전용**이라 한국어 HRI에서 Dense 검색이 무력했음. bge-m3(멀티링구얼)로 교체하며 ChromaDB로 함께 전환. 융합도 set union → RRF로 개선. |
 | "하이브리드가 정말 더 정확한가?" | **소규모 문서에선 Dense 단독으로도 충분**했다. 하이브리드의 이점은 문서량이 커질 때 고유명사·수치 매칭에서 나타난다. 다만 **BM25 추가 비용이 0.1ms**라 안 쓸 이유가 없다는 게 핵심 판단. |
 | "RRF의 k=60은 왜?" | 원 논문(Cormack et al., 2009)의 관례값. 상위 순위 쏠림을 완화하는 상수로, 도메인 튜닝 없이 안정적으로 동작. |
+| "파인튜닝은 어떻게 검증했나?" | **학습 로그가 저장소에 보존되어 있음** (`trainer_state.json`). Train Loss 17.81→0.29, Eval Loss 0.566→0.322. step 1400 이후 eval loss가 0.3225→0.3221로 정체 → 과적합 직전으로 판단해 best checkpoint를 1400으로 선택. |
+| "왜 q_proj/v_proj만 타겟팅했나?" | 파라미터 효율. 전체 어텐션(k/o_proj 포함) 대비 학습 파라미터를 절반으로 줄이면서 페르소나 톤 학습에는 충분했다. r=8/α=16도 같은 맥락의 보수적 설정. |
 
 ---
 
@@ -399,6 +458,6 @@ FAISS + BM25 하이브리드였으나 두 가지 결함이 있었다.
 > - 한국어 BM25의 조사 문제(공백 분리 시 매칭 토큰 0개)를 **문자 bigram 색인**으로 해결, 형태소 분석기 의존성 없이 매칭률 확보. **BM25 추가 비용 +0.1ms**(Dense 39.5ms 대비)로 무비용 융합
 > - 경량 LLM 환각을 RAG로 구조적 차단 — 미적용 시 연락처·사양 수치를 근거까지 날조하는 현상을 대조 실측으로 검증
 > - **YAML 프로파일 기반 하드웨어 추상화**로 Jetson(SmolVLM-500M)–RTX(Qwen3-VL-4B) 코드베이스 단일화, 설정 교체만으로 환경 전환
-> - QLoRA 파인튜닝 + GGUF 양자화로 **모델 크기 3.21GB → 1.03GB (-68%)**, 페르소나 일관성 유지
+> - **QLoRA 파인튜닝**(r=8, α=16, q/v_proj)으로 로봇 페르소나 학습 — **Train Loss 17.81→0.29, Eval Loss 0.566→0.322**(5 epoch/1,465 steps), eval loss 정체 구간에서 조기 종료 판단. GGUF Q4_K_M 변환으로 **3.21GB → 1.03GB (-68%)**
 > - Ring Buffer(고정 길이 deque) 세션 관리로 **500턴 주입 후에도 컨텍스트 20턴 상한 유지** (Memory Leak Free)
 > - Vercel + Cloudflare Tunnel 하이브리드 배포 및 PowerShell 기동 자동화(헬스체크·멱등 재기동·터널 URL 자동 반영·재배포)

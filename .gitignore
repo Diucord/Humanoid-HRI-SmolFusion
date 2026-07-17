@@ -72,3 +72,7 @@ qwen_trainer/
 
 # 데모 기동 로그
 webapp/logs/
+
+# 파인튜닝 근거 파일은 예외로 포함 (수 KB, 학습 기록 증빙)
+!vlm_server/finetune/igris-tuned/checkpoint-*/trainer_state.json
+!vlm_server/finetune/igris-tuned/checkpoint-*/adapter_config.json

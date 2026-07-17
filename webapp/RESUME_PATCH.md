@@ -235,7 +235,42 @@ PDF 2.6절과 3.4.3절에 **`Cosine Similarity ≥ 0.98`** 이 두 번 등장한
 
 ---
 
-## G. 남은 확인 항목
+## G. [추가] 파인튜닝 학습 로그 — **근거 보존됨** ⭐
+
+성능 측정 로그는 유실됐지만, **파인튜닝 기록은 저장소에 그대로 남아 있다.**
+이건 재현 가능한 1급 근거이므로 **반드시 포트폴리오에 추가할 것.**
+
+**파일 위치**
+- [`vlm_server/finetune/igris-tuned/checkpoint-1465/trainer_state.json`](../vlm_server/finetune/igris-tuned/checkpoint-1465/trainer_state.json)
+- [`vlm_server/finetune/igris-tuned/checkpoint-1465/adapter_config.json`](../vlm_server/finetune/igris-tuned/checkpoint-1465/adapter_config.json)
+
+**추가할 내용**
+
+> **QLoRA 파인튜닝 (학습 로그 보존)**
+>
+> | 설정 | 값 |
+> |---|---|
+> | Base | Qwen3-1.7B-Instruct |
+> | LoRA | `r=8`, `alpha=16`, `dropout=0.05` |
+> | Target | `q_proj`, `v_proj` |
+> | 학습 | 5 epoch / 1,465 steps / batch 4 |
+>
+> | 구간 | Train Loss | Eval Loss |
+> |---|---|---|
+> | step 50 | 17.81 | — |
+> | step 100 | 3.85 | 0.566 |
+> | step 1400 (best) | 0.290 | **0.322** |
+>
+> - Train Loss **17.81 → 0.29**, Eval Loss **0.566 → 0.322**
+> - step 1400 이후 eval loss 정체(0.3225→0.3221) → **과적합 직전 조기 종료 판단**
+> - 총 연산량 2.54e16 FLOPs
+
+**왜 강한가** — "QLoRA 썼다"가 아니라 **"학습 곡선을 보고 언제 멈출지 판단했다"**는
+근거가 된다. best_checkpoint가 1465가 아니라 **1400**인 것 자체가 판단의 증거.
+
+---
+
+## H. 남은 확인 항목
 
 | 항목 | PDF 서술 | 상태 |
 |---|---|---|
