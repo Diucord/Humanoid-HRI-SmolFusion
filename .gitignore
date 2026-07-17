@@ -66,3 +66,9 @@ frame_*.jpg
 *.exe
 *.dll
 webapp/tunnel/
+
+# 별도 저장소 (Qwen3-Persona-Trainer) — 여기에 포함하지 않음
+qwen_trainer/
+
+# 데모 기동 로그
+webapp/logs/
