@@ -288,6 +288,21 @@ FAISS + BM25 하이브리드였으나 두 가지 결함이 있었다.
 4B로 확장할 때 **아키텍처 변경 없이 설정 교체만으로 대응**할 수 있었다.
 (반대 순서였다면 구조 재설계가 필요했다.)
 
+**이식 최적화 (근거 전부 보존)** — 상세: [`JETSON_PORTING.md`](JETSON_PORTING.md)
+
+| 최적화 | 내용 | 근거 파일 |
+|---|---|---|
+| **의존성 재구성** | aarch64/CUDA 11.4/Py3.8 제약에 맞춰 NVIDIA JetPack 전용 PyTorch 휠(`2.1.0+nv23.10`) 확보, 전체 의존성 하향 고정 | [`nx/requirements.txt`](../nx/requirements.txt) |
+| **CUDA 소스 빌드** | 공식 Jetson 바이너리 부재 → `CMAKE_CUDA_ARCHITECTURES=87`(Orin) 직접 지정, Xavier(SM72) 별도 대응 | [`on-device/README.md`](../on-device/README.md) |
+| **통합 메모리 배분** | shared memory 특성상 VLM에 GPU 우선, LLM은 `-ngl 0`으로 CPU 처리 | [`nx/.env`](../nx/.env) |
+| **프로파일 추상화** | `PROFILE` 환경변수로 YAML 교체 — provider(llama.cpp↔transformers)까지 달라져도 코드 단일 | [`config_loader.py`](../nx/app/config_loader.py) |
+| **I/O 병목 제거** | 느린 eMMC 대신 `/dev/shm`(tmpfs)에 프레임 임시 저장 | `use_tmpfs: true` |
+| **불필요 추론 제거** | 모션 차분 기반 VLM 호출 스킵 | `motion_diff_thresh: 3.0` |
+
+> **핵심** — Jetson 이식은 "코드를 옮기는 일"이 아니라
+> **의존성 트리 전체를 aarch64/CUDA 11.4/Python 3.8 제약에 맞춰 재구성하는 일**이었다.
+> `pip install torch` 한 줄이 안 되는 환경에서 시작한다.
+
 ---
 
 ### ⑤ 결정론적 세션 관리 및 사용자 식별
@@ -457,7 +472,9 @@ FAISS + BM25 하이브리드였으나 두 가지 결함이 있었다.
 > - **Hybrid RAG(bge-m3 Dense + BM25 Sparse + RRF 융합)** 재설계 — 초기 FAISS+BM25 구성이 영어 전용 임베딩으로 한국어 HRI에 부적합함을 확인하고 멀티링구얼 임베딩·순위 기반 융합으로 전환
 > - 한국어 BM25의 조사 문제(공백 분리 시 매칭 토큰 0개)를 **문자 bigram 색인**으로 해결, 형태소 분석기 의존성 없이 매칭률 확보. **BM25 추가 비용 +0.1ms**(Dense 39.5ms 대비)로 무비용 융합
 > - 경량 LLM 환각을 RAG로 구조적 차단 — 미적용 시 연락처·사양 수치를 근거까지 날조하는 현상을 대조 실측으로 검증
-> - **YAML 프로파일 기반 하드웨어 추상화**로 Jetson(SmolVLM-500M)–RTX(Qwen3-VL-4B) 코드베이스 단일화, 설정 교체만으로 환경 전환
+> - **Jetson 온디바이스 이식**: aarch64/CUDA 11.4/Py3.8 제약에 맞춰 NVIDIA JetPack 전용 PyTorch 휠 확보 및 의존성 트리 재구성, llama.cpp를 `CMAKE_CUDA_ARCHITECTURES=87`(Orin)로 소스 빌드(Xavier SM72 별도 대응)
+> - **통합 메모리 배분 설계**: Jetson의 CPU-GPU shared memory 특성상 지연에 민감한 VLM에 GPU 우선 할당, LLM은 `-ngl 0`으로 CPU 처리. tmpfs(`/dev/shm`) 프레임 저장으로 eMMC I/O 병목 제거, 모션 차분 기반 VLM 호출 스킵
+> - **YAML 프로파일 기반 하드웨어 추상화**로 Jetson(SmolVLM-500M)–RTX(Qwen3-VL-4B) 코드베이스 단일화 — provider(llama.cpp↔transformers)가 달라져도 파이프라인 코드는 무변경
 > - **QLoRA 파인튜닝**(r=8, α=16, q/v_proj)으로 로봇 페르소나 학습 — **Train Loss 17.81→0.29, Eval Loss 0.566→0.322**(5 epoch/1,465 steps), eval loss 정체 구간에서 조기 종료 판단. GGUF Q4_K_M 변환으로 **3.21GB → 1.03GB (-68%)**
 > - Ring Buffer(고정 길이 deque) 세션 관리로 **500턴 주입 후에도 컨텍스트 20턴 상한 유지** (Memory Leak Free)
 > - Vercel + Cloudflare Tunnel 하이브리드 배포 및 PowerShell 기동 자동화(헬스체크·멱등 재기동·터널 URL 자동 반영·재배포)
